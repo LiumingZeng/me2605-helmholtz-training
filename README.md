@@ -24,7 +24,7 @@ The baseline is the official DeepXDE 2D Helmholtz Dirichlet example:
 
 A minimal PyTorch reproduction is in `code/scripts/baseline.py`.
 
-## Pilot results (single seed; pilot hardware)
+## Pilot results (RTX 5070 12GB, single seed)
 
 These are single-seed pilot numbers; final runs will be on the Hetao cluster and will be
 re-measured with three seeds.

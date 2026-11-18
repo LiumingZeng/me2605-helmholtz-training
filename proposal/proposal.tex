@@ -38,7 +38,7 @@ Diagnosing High-Frequency Helmholtz PINNs}\\[2pt]
 \end{equation}
 with $k_0=2\pi n$, exact solution $u^\star=\sin(k_0x)\sin(k_0y)$, and source $f=k_0^2\sin(k_0x)\sin(k_0y)$. The integer $n$ is the number of wavelengths across the domain, so larger $n$ means higher frequency and a more indefinite operator. This is the official DeepXDE Helmholtz Dirichlet benchmark~\cite{deepxde}: $[2,150,150,150,1]$ network, hard boundary factor $x(1-x)y(1-y)$, 10 collocation points per wavelength, 5000 Adam steps, lr $10^{-3}$.
 
-\textbf{Pilot baselines (single seed; pilot hardware).} Replacing the official \texttt{sin} activation by \texttt{tanh} gives a standard PINN baseline; these pilot numbers will be re-measured on the Hetao cluster with three seeds.
+\textbf{Pilot baselines (RTX 5070 12GB, single seed).} Replacing the official \texttt{sin} activation by \texttt{tanh} gives a standard PINN baseline; these pilot numbers will be re-measured on the Hetao cluster with three seeds.
 
 \begin{center}
 \vspace{-4pt}
