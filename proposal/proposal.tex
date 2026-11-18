@@ -54,7 +54,7 @@ $n=4$, sin & $1.00$ & 100.4\,s & never \\
 \vspace{-2pt}
 \end{center}
 
-The \texttt{tanh} PINN fails even at $n=2$, while the official \texttt{sin} activation reaches $10^{-2}$ in 35.9\,s and $5.6\times10^{-3}$ in 52.2\,s. At $n=4$ both baselines collapse to the zero output (loss equals the source-only loss). \textbf{Baseline to beat:} $n=2$, \texttt{sin}, time-to-$10^{-2}$ $=35.9$\,s; target $\le32.3$\,s ($\ge10\%$ faster). \textbf{Secondary target:} reach $10^{-2}$ at $n=4$, where both baselines fail. Project repo: \url{https://github.com/LiumingZeng/me2605-helmholtz-training}. Hardware: one local \textbf{RTX 5070 12GB}; no course-cluster dependency.
+The \texttt{tanh} PINN fails even at $n=2$, while the official \texttt{sin} activation reaches $10^{-2}$ in 35.9\,s and $5.60\times10^{-3}$ in 52.2\,s. At $n=4$ both baselines collapse to the zero output (loss equals the source-only loss). \textbf{Baseline to beat:} $n=2$, \texttt{sin}, final error $5.60\times10^{-3}$ at 52.2\,s (time-to-$10^{-2}$ $=35.9$\,s). \textbf{Primary target:} reach $5.60\times10^{-3}$ in $\le47.0$\,s ($\ge10\%$ faster); \textbf{intermediate target:} $10^{-2}$ in $\le32.3$\,s. \textbf{Secondary target:} reach $10^{-2}$ at $n=4$, where both baselines fail. Project repo: \url{https://github.com/LiumingZeng/me2605-helmholtz-training}. Hardware: one local \textbf{RTX 5070 12GB}; no course-cluster dependency.
 
 \section{Research Questions and Hypotheses}
 
@@ -81,11 +81,11 @@ These questions map to Lec~2--4 (conditioning, initialization, width/depth), Lec
 
 \textbf{Interventions.} (i) Frequency-aware activations: \texttt{sin}/SIREN~\cite{siren} and Fourier feature mappings~\cite{fourier}. (ii) Curriculum on $n$: train at low $n$, then fine-tune at the target $n$. (iii) Source normalization: scale $f$ and/or the residual by $k_0^{-2}$ to keep the loss and gradients $O(1)$. (iv) Adaptive sampling: RAD/RAR around high-residual regions. (v) Preconditioning: weight the residual by the Helmholtz symbol $1/(k_0^2+|\xi|^2)$ or use a mixed formulation. (vi) Optimizer/schedule: AdamW with warmup + cosine, followed by an optional L-BFGS fine-tune. Wall-clock tricks (bf16, \texttt{torch.compile}) are reported separately from the scientific comparison.
 
-\textbf{Success criteria.} Primary: at $n=2$ with \texttt{sin}, reach $10^{-2}$ in $\le32.3$\,s ($\ge10\%$ faster than 35.9\,s). Secondary: at $n=4$, reach $10^{-2}$ within the same 5000-step/s budget where both baselines fail. All numbers are mean $\pm$ std over three seeds, timed with CUDA events after warmup. A negative result (e.g., $n=4$ remains untrainable) is still informative if the diagnostics identify the blocking mechanism.
+\textbf{Success criteria.} Primary: at $n=2$ with \texttt{sin}, reach the baseline final error $5.60\times10^{-3}$ in $\le47.0$\,s ($\ge10\%$ faster than 52.2\,s); intermediate: $10^{-2}$ in $\le32.3$\,s. Secondary: at $n=4$, reach $10^{-2}$ within the same 5000-step/s budget where both baselines fail. All numbers are mean $\pm$ std over three seeds, timed with CUDA events after warmup. A negative result (e.g., $n=4$ remains untrainable) is still informative if the diagnostics identify the blocking mechanism.
 
 \section{Compute}
 
-One RTX 5070 12GB (local). A 5000-step run takes 50--100\,s; the base grid ($5$ frequencies $\times$ $4$ activations $\times$ $2$ widths $\times$ $3$ seeds) is about 2 GPU-hours, and diagnostics/interventions bring the total to roughly \textbf{30 GPU-hours}. I plan \textbf{6--10 GPU-hours per week}. No multi-GPU work is required; a 5090/910C, if available, is only for an optional width-scaling check.
+One RTX 5070 12GB (local). A 5000-step run takes 50--100\,s; the base grid ($5$ frequencies $\times$ $4$ activations $\times$ $2$ widths $\times$ $3$ depths $\times$ $3$ seeds) is about 8 GPU-hours, and diagnostics/interventions bring the total to roughly \textbf{30--40 GPU-hours}. I plan \textbf{6--10 GPU-hours per week}. No multi-GPU work is required; a 5090/910C, if available, is only for an optional width-scaling check.
 
 \section{Risks and Fallbacks}
 
