@@ -38,7 +38,7 @@ Diagnosing High-Frequency Helmholtz PINNs}\\[2pt]
 \end{equation}
 with $k_0=2\pi n$, exact solution $u^\star=\sin(k_0x)\sin(k_0y)$, and source $f=k_0^2\sin(k_0x)\sin(k_0y)$. The integer $n$ is the number of wavelengths across the domain, so larger $n$ means higher frequency and a more indefinite operator. This is the official DeepXDE Helmholtz Dirichlet benchmark~\cite{deepxde}: $[2,150,150,150,1]$ network, hard boundary factor $x(1-x)y(1-y)$, 10 collocation points per wavelength, 5000 Adam steps, lr $10^{-3}$.
 
-\textbf{Pilot baselines (RTX 5070 12GB, single seed).} Replacing the official \texttt{sin} activation by \texttt{tanh} gives a standard PINN baseline.
+\textbf{Pilot baselines (single seed; pilot hardware).} Replacing the official \texttt{sin} activation by \texttt{tanh} gives a standard PINN baseline; these pilot numbers will be re-measured on the Hetao cluster with three seeds.
 
 \begin{center}
 \vspace{-4pt}
@@ -55,7 +55,7 @@ $n=4$, sin & $1.00$ & 100.4\,s & never \\
 \vspace{-2pt}
 \end{center}
 
-The \texttt{tanh} PINN fails even at $n=2$, while the official \texttt{sin} activation reaches $10^{-2}$ in 35.9\,s and $5.60\times10^{-3}$ in 52.2\,s. At $n=4$ both baselines collapse to the zero output (loss equals the source-only loss). \textbf{Baseline to beat:} $n=2$, \texttt{sin}, final error $5.60\times10^{-3}$ at 52.2\,s (time-to-$10^{-2}$ $=35.9$\,s). \textbf{Primary target:} reach $5.60\times10^{-3}$ in $\le47.0$\,s ($\ge10\%$ faster); \textbf{intermediate target:} $10^{-2}$ in $\le32.3$\,s. \textbf{Secondary target:} reach $10^{-2}$ at $n=4$, where both baselines fail. Project repo: \url{https://github.com/LiumingZeng/me2605-helmholtz-training}. Hardware: one local \textbf{RTX 5070 12GB}; no course-cluster dependency.
+The \texttt{tanh} PINN fails even at $n=2$, while the official \texttt{sin} activation reaches $10^{-2}$ in 35.9\,s and $5.60\times10^{-3}$ in 52.2\,s. At $n=4$ both baselines collapse to the zero output (loss equals the source-only loss). \textbf{Baseline to beat:} $n=2$, \texttt{sin}, final error $5.60\times10^{-3}$ at 52.2\,s (time-to-$10^{-2}$ $=35.9$\,s). \textbf{Primary target:} reach $5.60\times10^{-3}$ in $\le47.0$\,s ($\ge10\%$ faster); \textbf{intermediate target:} $10^{-2}$ in $\le32.3$\,s. \textbf{Secondary target:} reach $10^{-2}$ at $n=4$, where both baselines fail. Project repo: \url{https://github.com/LiumingZeng/me2605-helmholtz-training}. Hardware: one \textbf{Hetao-provided GPU} (exact type to be confirmed); all final runs will be on the Hetao cluster.
 
 \section{Research Questions and Hypotheses}
 
@@ -86,11 +86,11 @@ These questions map to Lec~2--4 (conditioning, initialization, width/depth), Lec
 
 \section{Compute}
 
-One RTX 5070 12GB (local). A 5000-step run takes 50--100\,s; the base grid ($5$ frequencies $\times$ $4$ activations $\times$ $2$ widths $\times$ $3$ depths $\times$ $3$ seeds) is about 8 GPU-hours, and diagnostics/interventions bring the total to roughly \textbf{30--40 GPU-hours}. I plan \textbf{6--10 GPU-hours per week}. No multi-GPU work is required; a 5090/910C, if available, is only for an optional width-scaling check.
+One Hetao-provided GPU (exact type to be confirmed). A 5000-step run takes 50--100\,s; the base grid ($5$ frequencies $\times$ $4$ activations $\times$ $2$ widths $\times$ $3$ depths $\times$ $3$ seeds) is about 8 GPU-hours, and diagnostics/interventions bring the total to roughly \textbf{30--40 GPU-hours}. I plan \textbf{6--10 GPU-hours per week}. No multi-GPU work is required; a second card, if available, is only for an optional width-scaling check.
 
 \section{Risks and Fallbacks}
 
-\textbf{If $n=4$ cannot be fixed:} report the negative result and the identified mechanism, and keep the $n=2$ 10\% result as the A-style validation. \textbf{If spectral bias does not explain the $n=2$ gap:} test optimization/conditioning explanations (gradient norms, NTK eigenvalues, source scaling). \textbf{If the Helmholtz project is judged too application-oriented:} pivot to a lecture-example mechanism study (Adam vs.\ SGD under controlled conditioning, or warmup with normalization) using the same training code. \textbf{Hardware:} the local RTX 5070 is already working; the project does not depend on the course cluster.
+\textbf{If $n=4$ cannot be fixed:} report the negative result and the identified mechanism, and keep the $n=2$ 10\% result as the A-style validation. \textbf{If spectral bias does not explain the $n=2$ gap:} test optimization/conditioning explanations (gradient norms, NTK eigenvalues, source scaling). \textbf{If the Helmholtz project is judged too application-oriented:} pivot to a lecture-example mechanism study (Adam vs.\ SGD under controlled conditioning, or warmup with normalization) using the same training code. \textbf{Hardware:} if Hetao access is delayed, I will reduce the grid to the $n=2/4$ cells and run them once access is available; the $n=2$ pilot is cheap (50--100\,s per 5000-step run).
 
 \textbf{Timeline.} Week 1: reproduce the DeepXDE baseline and run the diagnostics. Week 2: frequency/activation grid and first interventions. Week 3: full 3-seed runs and ablations. Week 4 (buffer): final runs, report and poster.
 
