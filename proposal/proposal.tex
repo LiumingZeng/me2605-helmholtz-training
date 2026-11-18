@@ -55,7 +55,7 @@ $n=4$, sin & $1.00$ & 100.4\,s & never \\
 \vspace{-2pt}
 \end{center}
 
-The \texttt{tanh} PINN fails even at $n=2$, while the official \texttt{sin} activation reaches $10^{-2}$ in 35.9\,s and $5.60\times10^{-3}$ in 52.2\,s. At $n=4$ both baselines collapse to the zero output (loss equals the source-only loss). \textbf{Baseline to beat:} $n=2$, \texttt{sin}, final error $5.60\times10^{-3}$ at 52.2\,s (time-to-$10^{-2}$ $=35.9$\,s). \textbf{Primary target:} reach $5.60\times10^{-3}$ in $\le47.0$\,s ($\ge10\%$ faster); \textbf{intermediate target:} $10^{-2}$ in $\le32.3$\,s. \textbf{Secondary target:} reach $10^{-2}$ at $n=4$, where both baselines fail. Project repo: \url{https://github.com/LiumingZeng/me2605-helmholtz-training}. Hardware: one \textbf{Hetao-provided GPU} (exact type to be confirmed); all final runs will be on the Hetao cluster.
+The \texttt{tanh} PINN fails even at $n=2$, while the official \texttt{sin} activation reaches $10^{-2}$ in 35.9\,s and $5.60\times10^{-3}$ in 52.2\,s. At $n=4$ both baselines collapse to the zero output (loss equals the source-only loss). \textbf{Baseline to beat:} $n=2$, \texttt{sin}, final error $5.60\times10^{-3}$ at 52.2\,s (time-to-$10^{-2}$ $=35.9$\,s). \textbf{Primary target:} reach $5.60\times10^{-3}$ in $\le47.0$\,s ($\ge10\%$ faster); \textbf{intermediate target:} $10^{-2}$ in $\le32.3$\,s. \textbf{Secondary target:} reach $10^{-2}$ at $n=4$, where both baselines fail. Project repo: \url{https://github.com/LiumingZeng/me2605-helmholtz-training}. Hardware: one \textbf{Hetao-provided GPU/NPU} (exact type to be confirmed); all final runs will be on the Hetao cluster.
 
 \section{Research Questions and Hypotheses}
 
@@ -86,7 +86,7 @@ These questions map to Lec~2--4 (conditioning, initialization, width/depth), Lec
 
 \section{Compute}
 
-One Hetao-provided GPU (exact type to be confirmed). A 5000-step run takes 50--100\,s; the base grid ($5$ frequencies $\times$ $4$ activations $\times$ $2$ widths $\times$ $3$ depths $\times$ $3$ seeds) is about 8 GPU-hours, and diagnostics/interventions bring the total to roughly \textbf{30--40 GPU-hours}. I plan \textbf{6--10 GPU-hours per week}. No multi-GPU work is required; a second card, if available, is only for an optional width-scaling check.
+One Hetao-provided GPU/NPU (exact type to be confirmed). A 5000-step run takes 50--100\,s; the base grid ($5$ frequencies $\times$ $4$ activations $\times$ $2$ widths $\times$ $3$ depths $\times$ $3$ seeds) is about 8 GPU-hours, and diagnostics/interventions bring the total to roughly \textbf{30--40 GPU-hours}. I plan \textbf{6--10 GPU-hours per week}. No multi-GPU work is required; a second card, if available, is only for an optional width-scaling check.
 
 \section{Risks and Fallbacks}
 
