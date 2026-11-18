@@ -1,0 +1,107 @@
+\documentclass[10pt]{article}
+
+\usepackage[margin=0.72in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\usepackage{titlesec}
+
+\setlist[itemize]{leftmargin=*,noitemsep,topsep=1pt,parsep=0pt}
+\setlist[enumerate]{leftmargin=*,noitemsep,topsep=1pt,parsep=0pt}
+\titlespacing*{\section}{0pt}{5pt plus 1pt minus 1pt}{2pt}
+\titleformat{\section}{\normalfont\normalsize\bfseries}{\thesection.}{0.5em}{}
+\setlength{\parskip}{1pt}
+\setlength{\parindent}{0pt}
+\pagestyle{plain}
+
+\begin{document}
+\sloppy
+
+\begin{center}
+{\large\bfseries Spectral Bias or Operator Conditioning?\\[1pt]
+Diagnosing High-Frequency Helmholtz PINNs}\\[2pt]
+{\normalsize A mechanism study with a $\ge10\%$ time-to-target improvement}\\[2pt]
+{\small Liuming Zeng \quad ME2605 Training Neural Networks, Fall 2026 \quad November 18, 2026}\\[1pt]
+{\small Project type: B (mechanism study), with an A-style $\ge10\%$ speed validation}
+\end{center}
+\vspace{-6pt}
+
+\section{Task and Baseline}
+
+\textbf{Task.} Solve the 2D Helmholtz equation on $\Omega=[0,1]^2$,
+\begin{equation}
+-\Delta u-k_0^2u=f,\qquad u=0\ \text{on}\ \partial\Omega,
+\label{eq:helmholtz}
+\end{equation}
+with $k_0=2\pi n$, exact solution $u^\star=\sin(k_0x)\sin(k_0y)$, and source $f=k_0^2\sin(k_0x)\sin(k_0y)$. The integer $n$ is the number of wavelengths across the domain, so larger $n$ means higher frequency and a more indefinite operator. This is the official DeepXDE Helmholtz Dirichlet benchmark~\cite{deepxde}: $[2,150,150,150,1]$ network, hard boundary factor $x(1-x)y(1-y)$, 10 collocation points per wavelength, 5000 Adam steps, lr $10^{-3}$.
+
+\textbf{Pilot baselines (RTX 5070 12GB, single seed).} Replacing the official \texttt{sin} activation by \texttt{tanh} gives a standard PINN baseline.
+
+\begin{center}
+\vspace{-4pt}
+\begin{tabular}{lccc}
+\toprule
+Setting & Final rel.\ $L^2$ & Time & Time to $10^{-2}$ \\
+\midrule
+$n=2$, tanh & $1.71$ & 75.2\,s & never \\
+$n=2$, sin (official) & $5.60\times10^{-3}$ & 52.2\,s & 35.9\,s \\
+$n=4$, tanh & $1.00$ & 96.7\,s & never \\
+$n=4$, sin & $1.00$ & 100.4\,s & never \\
+\bottomrule
+\end{tabular}
+\vspace{-2pt}
+\end{center}
+
+The \texttt{tanh} PINN fails even at $n=2$, while the official \texttt{sin} activation reaches $10^{-2}$ in 35.9\,s and $5.6\times10^{-3}$ in 52.2\,s. At $n=4$ both baselines collapse to the zero output (loss equals the source-only loss). \textbf{Baseline to beat:} $n=2$, \texttt{sin}, time-to-$10^{-2}$ $=35.9$\,s; target $\le32.3$\,s ($\ge10\%$ faster). \textbf{Secondary target:} reach $10^{-2}$ at $n=4$, where both baselines fail. Project repo: \url{https://github.com/LiumingZeng/me2605-helmholtz-training}. Hardware: one local \textbf{RTX 5070 12GB}; no course-cluster dependency.
+
+\section{Research Questions and Hypotheses}
+
+\textbf{RQ1.} Why does \texttt{tanh} fail at $n=2$ while \texttt{sin} succeeds: spectral bias, optimization, or conditioning?\\
+\textbf{RQ2.} Why do both activations fail at $n=4$: source amplitude/scaling, sampling density, or the indefinite Helmholtz operator?\\
+\textbf{RQ3.} Which intervention reaches $n=4$ and cuts the $n=2$ time-to-target by at least $10\%$?
+
+\textbf{H1 (spectral bias).} The NTK spectrum of \texttt{tanh} decays at high frequencies, while \texttt{sin}/Fourier features have a flatter spectrum; this predicts the $n=2$ gap and the error-spectrum cutoff.\\
+\textbf{H2 (conditioning).} At $n=4$ the collapse is dominated by source scaling and the large $k_0^2$ term, not only by the activation: the residual/gradient scale grows with $k_0$, and curriculum or source normalization should fix it.\\
+\textbf{H3 (interaction).} A frequency-aware activation alone fixes $n=2$ but not $n=4$; adding curriculum on $n$ or source scaling makes $n=4$ trainable.\\
+\textbf{H4 (recipe).} A combined recipe (frequency-aware activation + curriculum/source scaling + adaptive sampling) reaches $10^{-2}$ at $n=4$ and improves the $n=2$ time-to-target by $\ge10\%$.
+
+These questions map to Lec~2--4 (conditioning, initialization, width/depth), Lec~5 (width transfer), and Lec~7 (Adam/preconditioning); the frequency-aware interventions are the training tricks.
+
+\section{Methods and Experiments}
+
+\textbf{Regimes.} To separate the two mechanisms, I will use two families:
+(i) \emph{frequency-scaled}: $k_0=2\pi n$ and $u^\star=\sin(k_0x)\sin(k_0y)$ (DeepXDE setup), where solution frequency and operator scale together;
+(ii) \emph{fixed-solution}: $u^\star=\sin(\pi x)\sin(3\pi y)$, $f=-\Delta u^\star-k_0^2u^\star$, and vary $k_0$ independently, which isolates the operator's conditioning from the solution's frequency content.
+
+\textbf{Baselines and grid.} DeepXDE example with \texttt{tanh} and \texttt{sin}; $n\in\{2,3,4,6,8\}$; activation $\in\{\text{tanh},\text{sin},\text{SIREN},\text{tanh+Fourier features}\}$; width $\{150,256\}$ and depth $\{3,4,6\}$; 3 seeds. I will report time-to-$10^{-2}$, final relative $L^2$, and wall-clock.
+
+\textbf{Diagnostics.} (i) Empirical NTK on the collocation/test grid: eigenvalue spectrum, effective rank, condition number, and high-frequency content. (ii) Hessian/Gauss--Newton top eigenvalues and eigenvalue signs via Hessian-vector products and Lanczos. (iii) FFT error spectrum at checkpoints to locate the spectral cutoff. (iv) Per-layer gradient norms and loss-component ratios.
+
+\textbf{Interventions.} (i) Frequency-aware activations: \texttt{sin}/SIREN~\cite{siren} and Fourier feature mappings~\cite{fourier}. (ii) Curriculum on $n$: train at low $n$, then fine-tune at the target $n$. (iii) Source normalization: scale $f$ and/or the residual by $k_0^{-2}$ to keep the loss and gradients $O(1)$. (iv) Adaptive sampling: RAD/RAR around high-residual regions. (v) Preconditioning: weight the residual by the Helmholtz symbol $1/(k_0^2+|\xi|^2)$ or use a mixed formulation. (vi) Optimizer/schedule: AdamW with warmup + cosine, followed by an optional L-BFGS fine-tune. Wall-clock tricks (bf16, \texttt{torch.compile}) are reported separately from the scientific comparison.
+
+\textbf{Success criteria.} Primary: at $n=2$ with \texttt{sin}, reach $10^{-2}$ in $\le32.3$\,s ($\ge10\%$ faster than 35.9\,s). Secondary: at $n=4$, reach $10^{-2}$ within the same 5000-step/s budget where both baselines fail. All numbers are mean $\pm$ std over three seeds, timed with CUDA events after warmup. A negative result (e.g., $n=4$ remains untrainable) is still informative if the diagnostics identify the blocking mechanism.
+
+\section{Compute}
+
+One RTX 5070 12GB (local). A 5000-step run takes 50--100\,s; the base grid ($5$ frequencies $\times$ $4$ activations $\times$ $2$ widths $\times$ $3$ seeds) is about 2 GPU-hours, and diagnostics/interventions bring the total to roughly \textbf{30 GPU-hours}. I plan \textbf{6--10 GPU-hours per week}. No multi-GPU work is required; a 5090/910C, if available, is only for an optional width-scaling check.
+
+\section{Risks and Fallbacks}
+
+\textbf{If $n=4$ cannot be fixed:} report the negative result and the identified mechanism, and keep the $n=2$ 10\% result as the A-style validation. \textbf{If spectral bias does not explain the $n=2$ gap:} test optimization/conditioning explanations (gradient norms, NTK eigenvalues, source scaling). \textbf{If the Helmholtz project is judged too application-oriented:} pivot to a lecture-example mechanism study (Adam vs.\ SGD under controlled conditioning, or warmup with normalization) using the same training code. \textbf{Hardware:} the local RTX 5070 is already working; the project does not depend on the course cluster.
+
+\textbf{Timeline.} Week 1: reproduce the DeepXDE baseline and run the diagnostics. Week 2: frequency/activation grid and first interventions. Week 3: full 3-seed runs and ablations. Week 4 (buffer): final runs, report and poster.
+
+\begin{thebibliography}{9}
+\small
+\setlength{\itemsep}{0pt}
+\bibitem{deepxde} L. Lu, X. Meng, Z. Mao, G. E. Karniadakis, DeepXDE: a deep learning library for solving differential equations, \emph{SIAM Rev.} 63 (2021) 208--228. Example: \url{https://github.com/lululxvi/deepxde/blob/master/examples/pinn_forward/Helmholtz_Dirichlet_2d.py}.
+\bibitem{raissi2019} M. Raissi, P. Perdikaris, G. E. Karniadakis, Physics-informed neural networks, \emph{J. Comput. Phys.} 378 (2019) 686--707.
+\bibitem{siren} V. Sitzmann, J. N. P. Martel, A. W. Bergman, D. B. Lindell, G. Wetzstein, Implicit neural representations with periodic activation functions, \emph{NeurIPS} 2020.
+\bibitem{fourier} M. Tancik et al., Fourier features let networks learn high frequency functions in low dimensional domains, \emph{NeurIPS} 2020.
+\bibitem{rahaman} N. Rahaman et al., On the spectral bias of neural networks, \emph{ICML} 2019.
+\bibitem{jacot} A. Jacot, F. Gabriel, C. Hongler, Neural tangent kernel: convergence and generalization in neural networks, \emph{NeurIPS} 2018.
+\end{thebibliography}
+
+\end{document}
